@@ -1,6 +1,7 @@
 // ARQUIVO COMPLETO E ATUALIZADO: backend/api/refine.ts
 
 import OpenAI from 'openai';
+import promptRewriterSystem from './promptRewriterSystem';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -40,15 +41,14 @@ export default async function handler(req, res) {
       messages: [
         {
           role: "system",
-          content: "Você é um engenheiro de prompts especialista. Sua tarefa é reescrever o prompt do usuário a seguir para ser mais claro, detalhado e eficiente para um grande modelo de linguagem. Forneça contexto, especifique o formato de saída desejado se aplicável e elimine ambiguidades. Retorne APENAS o prompt reescrito, sem nenhuma introdução, explicação ou texto adicional."
+          content: promptRewriterSystem
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature: 0.7
     });
     
     const refinedPrompt = completion.choices[0].message.content;
