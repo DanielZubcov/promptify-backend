@@ -37,7 +37,7 @@ export default async function handler(req, res) {
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5-nano",
       messages: [
         {
           role: "system",
@@ -48,7 +48,8 @@ export default async function handler(req, res) {
           content: prompt
         }
       ],
-      temperature: 0.7
+      temperature: 0.7,
+      max_tokens: 1500
     });
     
     const refinedPrompt = completion.choices[0].message.content;
