@@ -48,8 +48,7 @@ export default async function handler(req, res) {
           content: prompt
         }
       ],
-      temperature: 0.7,
-      max_tokens: 1500
+      temperature: 0.7
     });
     
     const refinedPrompt = completion.choices[0].message.content;
