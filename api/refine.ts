@@ -4,61 +4,68 @@ import OpenAI from 'openai';
 import promptRewriterSystem from './promptRewriterSystem';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export default async function handler(req, res) {
-  // ===============================================================
-  // INÍCIO DO NOVO BLOCO DE CÓDIGO PARA LIDAR COM CORS
-  // ===============================================================
-  // Define os cabeçalhos de permissão. O '*' significa "qualquer origem".
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // ===============================================================
+  // INÍCIO DO BLOCO DE CÓDIGO PARA LIDAR COM CORS
+  // ===============================================================
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Se a requisição for do tipo OPTIONS (o "preflight"),
-  // apenas retornamos uma resposta de sucesso sem conteúdo.
-  if (req.method === 'OPTIONS') {
-    return res.status(204).end();
-  }
-  // ===============================================================
-  // FIM DO NOVO BLOCO DE CÓDIGO
-  // ===============================================================
+  if (req.method === 'OPTIONS') {
+    return res.status(204).end();
+  }
+  // ===============================================================
+  // FIM DO BLOCO DE CÓDIGO
+  // ===============================================================
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Apenas o método POST é permitido' });
-  }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ message: 'Apenas o método POST é permitido' });
+  }
 
-  const { prompt } = req.body;
+  // --- MUDANÇA 1: Receber o nome do modelo do frontend ---
+  const { prompt, modelName } = req.body;
+  const defaultModel = "gpt-5-nano";
+  // O modelo a ser usado na chamada. Se o frontend não enviar, usamos o padrão.
+  const modelToUse = modelName || defaultModel;
 
-  if (!prompt) {
-    return res.status(400).json({ message: 'Nenhum prompt foi fornecido' });
-  }
+  if (!prompt) {
+    return res.status(400).json({ message: 'Nenhum prompt foi fornecido' });
+  }
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-5-nano",
-      messages: [
-        {
-          role: "system",
-          content: promptRewriterSystem
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.7
-    });
-    
-    const refinedPrompt = completion.choices[0].message.content;
-    
-    // Enviamos a resposta de sucesso
-    res.status(200).json({ refinedPrompt });
+  try {
+    // --- MUDANÇA 2: Criar o objeto de parâmetros dinamicamente ---
+    const apiParams: any = {
+      model: modelToUse,
+      messages: [
+        {
+          role: "system",
+          content: promptRewriterSystem,
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    };
 
-  } catch (error) {
-    console.error("Erro ao chamar a API da OpenAI:", error);
-    // Enviamos a resposta de erro
-    res.status(500).json({ message: "Erro ao refinar o prompt com a OpenAI" });
-  }
+    // --- MUDANÇA 3: Adicionar a temperatura de forma condicional ---
+    // Apenas adicione a temperatura se o modelo não for o "nano"
+    if (modelToUse !== 'gpt-5-nano') {
+      apiParams.temperature = 0.7; // Você pode usar qualquer valor aqui
+    }
+
+    const completion = await openai.chat.completions.create(apiParams);
+    
+    const refinedPrompt = completion.choices[0].message.content;
+    
+    res.status(200).json({ refinedPrompt });
+
+  } catch (error) {
+    console.error("Erro ao chamar a API da OpenAI:", error);
+    res.status(500).json({ message: "Erro ao refinar o prompt com a OpenAI" });
+  }
 }
