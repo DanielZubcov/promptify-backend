@@ -8,9 +8,7 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req, res) {
-  // ===============================================================
-  // INÍCIO DO BLOCO DE CÓDIGO PARA LIDAR COM CORS
-  // ===============================================================
+  // Bloco de CORS...
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -18,32 +16,32 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(204).end();
   }
-  // ===============================================================
-  // FIM DO BLOCO DE CÓDIGO
-  // ===============================================================
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Apenas o método POST é permitido' });
   }
 
-  // --- MUDANÇA 1: Receber o nome do modelo do frontend ---
   const { prompt, modelName } = req.body;
-  const defaultModel = "gpt-5-nano";
-  // O modelo a ser usado na chamada. Se o frontend não enviar, usamos o padrão.
-  const modelToUse = modelName || defaultModel;
 
   if (!prompt) {
     return res.status(400).json({ message: 'Nenhum prompt foi fornecido' });
   }
 
   try {
-    // --- MUDANÇA 2: Criar o objeto de parâmetros dinamicamente ---
+    // --- MUDANÇA 1: Decidir o modelo de refinamento com base no status do usuário (futuramente) ---
+    // Por enquanto, vamos usar o gpt-5-nano para todos.
+    const refinementModel = "gpt-5-nano";
+
+    // --- MUDANÇA 2: Usar o modelName detectado para enriquecer o prompt de sistema ---
+    // Adicionamos a informação do modelo detectado ao contexto.
+    const systemContent = `${promptRewriterSystem}\n\n# CONTEXT (Contexto adicional)\nO modelo alvo do usuário é o ${modelName || 'desconhecido'}.`;
+
     const apiParams: any = {
-      model: modelToUse,
+      model: refinementModel, // Usamos o modelo de refinamento correto
       messages: [
         {
           role: "system",
-          content: promptRewriterSystem,
+          content: systemContent, // Usamos o prompt de sistema enriquecido
         },
         {
           role: "user",
@@ -52,10 +50,9 @@ export default async function handler(req, res) {
       ],
     };
 
-    // --- MUDANÇA 3: Adicionar a temperatura de forma condicional ---
-    // Apenas adicione a temperatura se o modelo não for o "nano"
-    if (modelToUse !== 'gpt-5-nano') {
-      apiParams.temperature = 0.7; // Você pode usar qualquer valor aqui
+    // Adicionar a temperatura de forma condicional, se necessário
+    if (refinementModel !== 'gpt-5-nano') {
+      apiParams.temperature = 0.7;
     }
 
     const completion = await openai.chat.completions.create(apiParams);
