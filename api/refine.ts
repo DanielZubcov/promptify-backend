@@ -8,7 +8,7 @@ const openai = new OpenAI({
 });
 
 export default async function handler(req, res) {
-  // Bloco de CORS...
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -28,20 +28,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    // --- MUDANÇA 1: Decidir o modelo de refinamento com base no status do usuário (futuramente) ---
-    // Por enquanto, vamos usar o gpt-5-nano para todos.
+
     const refinementModel = "gpt-5-nano";
 
-    // --- MUDANÇA 2: Usar o modelName detectado para enriquecer o prompt de sistema ---
-    // Adicionamos a informação do modelo detectado ao contexto.
     const systemContent = `${promptRewriterSystem}\n\n# CONTEXT (Contexto adicional)\nO modelo alvo do usuário é o ${modelName || 'desconhecido'}.`;
 
     const apiParams: any = {
-      model: refinementModel, // Usamos o modelo de refinamento correto
+      model: refinementModel,
       messages: [
         {
           role: "system",
-          content: systemContent, // Usamos o prompt de sistema enriquecido
+          content: systemContent,
         },
         {
           role: "user",
@@ -50,7 +47,6 @@ export default async function handler(req, res) {
       ],
     };
 
-    // Adicionar a temperatura de forma condicional, se necessário
     if (refinementModel !== 'gpt-5-nano') {
       apiParams.temperature = 0.7;
     }
