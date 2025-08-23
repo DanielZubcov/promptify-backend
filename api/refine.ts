@@ -1,5 +1,3 @@
-// ARQUIVO COMPLETO E ATUALIZADO: backend/api/refine.ts
-
 import OpenAI from 'openai';
 import promptRewriterSystem from './promptRewriterSystem';
 
