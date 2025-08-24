@@ -1,4 +1,7 @@
+// ARQUIVO COMPLETO E ATUALIZADO: backend/api/refine.ts
+
 import OpenAI from 'openai';
+// A partir de agora, o promptRewriterSystem será mais um template.
 import promptRewriterSystem from './promptRewriterSystem';
 
 const openai = new OpenAI({
@@ -19,17 +22,31 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: 'Apenas o método POST é permitido' });
   }
 
-  const { prompt, modelName } = req.body;
+  // --- MUDANÇA 1: Receber também o objeto de configurações ---
+  const { prompt, modelName, settings } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ message: 'Nenhum prompt foi fornecido' });
   }
 
   try {
-
     const refinementModel = "gpt-5-nano";
 
-    const systemContent = `${promptRewriterSystem}\n\n# CONTEXT (Contexto adicional)\nO modelo alvo do usuário é o ${modelName || 'desconhecido'}.`;
+    // --- MUDANÇA 2: CONSTRUIR O PROMPT DO SISTEMA DE FORMA DINÂMICA ---
+    let systemContent = promptRewriterSystem;
+
+    // Se o usuário especificou uma persona, adicionamos à seção de estilo
+    if (settings && settings.persona) {
+        systemContent += `\n\n# STYLE (Estilo da resposta)\nAdicionalmente, adote a persona de: ${settings.persona}.`;
+    }
+
+    // Se o usuário especificou um tom, adicionamos à seção de estilo
+    if (settings && settings.tone && settings.tone !== 'neutro') {
+        systemContent += `\n\n# STYLE (Estilo da resposta)\nAdicionalmente, adote um tom de voz ${settings.tone}.`;
+    }
+
+    // Adicionamos o contexto do modelo que o usuário está usando
+    systemContent += `\n\n# MODEL (Contexto adicional)\nO modelo alvo do usuário é o ${modelName || 'desconhecido'}.`;
 
     const apiParams: any = {
       model: refinementModel,
