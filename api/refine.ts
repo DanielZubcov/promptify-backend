@@ -23,53 +23,39 @@ export default async function handler(req, res) {
     }
 
     const { prompt, modelName, settings } = req.body;
-
-    const temperature = settings?.temperature !== undefined ? settings.temperature : 0.7;
-    const maxTokens = settings?.maxTokens !== undefined ? settings.maxTokens : 1024;
-    const persona = settings?.persona || null;
-    const tone = settings?.tone || null;
-
-
     if (!prompt) {
         return res.status(400).json({ message: 'Nenhum prompt foi fornecido' });
     }
 
     try {
         const refinementModel = "gpt-5-nano";
+        const persona = settings?.persona || null;
+        const tone = settings?.tone || null;
 
-        const jsonParameters = JSON.stringify({
-            temperature: temperature,
-            max_tokens: maxTokens,
-        }, null, 2);
-
-        let textContent = promptRewriterSystem;
+        let systemContent = promptRewriterSystem;
 
         let styleContent = '';
         if (persona) {
-            styleContent += `\n\n# STYLE (Estilo da resposta)\nAdicionalmente, adote a persona de: ${persona}.`;
+            styleContent += `\n- Adote a persona de: ${persona}. `;
         }
-
         if (tone && tone !== 'neutro') {
-            styleContent += `\n\n# STYLE (Estilo da resposta)\nAdicionalmente, adote um tom de voz ${tone}.`;
+            styleContent += `\n- Adote um tom de fala: ${tone}. `;
         }
-
         if (styleContent) {
-            textContent += `\n\n# STYLE (Estilo da resposta)${styleContent}`;
+            systemContent += `\n# STYLE (Estilo da resposta)\n${styleContent}\n`;
         }
 
         let contextContent = `\n- O modelo alvo do usuário é o ${modelName || 'desconhecido'}.`;
         if (contextContent) {
-            textContent += `\n\n# CONTEXT (Contexto adicional)${contextContent}`;
+            systemContent += `\n# CONTEXT (Contexto adicional)\n${contextContent}`;
         }
-
-        const finalPrompt = `${jsonParameters}\n\n${textContent}`;
 
         const apiParams: any = {
             model: refinementModel,
             messages: [
                 {
                     role: "system",
-                    content: finalPrompt,
+                    content: systemContent,
                 },
                 {
                     role: "user",
@@ -86,7 +72,17 @@ export default async function handler(req, res) {
     
     const refinedPrompt = completion.choices[0].message.content;
 
-    res.status(200).json({ refinedPrompt });
+    const temperature = settings?.temperature !== undefined ? settings.temperature : 0.7;
+    const maxTokens = settings?.maxTokens !== undefined ? settings.maxTokens : 1024;
+
+    const jsonParameters = {
+        temperature: temperature,
+        max_tokens: maxTokens,
+    };
+
+    const finalPrompt = `${JSON.stringify(jsonParameters, null, 2)}\n\n${refinedPrompt}`;
+
+    res.status(200).json({ refinedPrompt: finalPrompt });
 
     } catch (error) {
         console.error("Erro ao chamar a API da OpenAI:", error);
