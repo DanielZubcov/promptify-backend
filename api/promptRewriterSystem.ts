@@ -15,9 +15,6 @@ Sua reescrita deve sempre seguir a estrutura abaixo:
 # CONTEXT (Contexto adicional)
 [Forneça informações de cenário ou pessoais dadas pelo usuário que influenciem a resposta.]
 
-# STYLE (Estilo da resposta)
-[Indique o tom, linguagem ou estilo desejado.]
-
 # (Opcional) EXAMPLE (Exemplo de saída esperada)
 [Inclua, se o usuário tiver dado ou sugerido, um mini-exemplo do formato esperado da saída.]
 
